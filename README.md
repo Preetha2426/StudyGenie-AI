@@ -56,5 +56,6 @@ StudyGenie AI simplifies exam preparation by providing personalized learning sup
 - Rithish M
 
 **Department:** Information Technology
+**Department:** Computer science and Engineering
 
 Department of Information Technology
