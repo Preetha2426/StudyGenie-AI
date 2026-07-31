@@ -50,9 +50,9 @@ StudyGenie AI simplifies exam preparation by providing personalized learning sup
 
 ## 👩‍💻 Developed By
 
-**Preetha P**
-**Mithra R**
-**Rithika S**
-**Rithish M**
+**Preetha P/n**
+**Mithra R/n**
+**Rithika S/n**
+**Rithish M/n**
 
 Department of Information Technology
