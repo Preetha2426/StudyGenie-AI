@@ -1,0 +1,461 @@
+🎓 StudyGenie AI
+Personalized Study Planner using Generative AI
+
+CELL 1
+
+!pip install -q openai gradio
+
+CELL 2
+
+from openai import OpenAI
+import gradio as gr
+
+client = OpenAI(
+    api_key="sk--jVShv6wQzUKSZRakUWd_Q",
+    base_url="https://apidev.navigatelabsai.com"
+)
+
+CELL 3
+
+def generate_study_plan(subject, topics, days_left, study_hours, level):
+
+    prompt = f"""
+You are an expert AI Study Planner.
+
+Student Details
+
+Subject: {subject}
+
+Topics: {topics}
+
+Exam in: {days_left} days
+
+Study Hours Per Day: {study_hours}
+
+Learning Level: {level}
+
+Generate the response EXACTLY in this format.
+
+### STUDY_PLAN
+(Create a day-wise timetable.)
+
+### EXPLANATION
+(Explain every topic simply.)
+
+### REVISION_NOTES
+(Give concise revision notes.)
+
+### QUIZ
+(Create 5 multiple choice questions with answers.)
+
+### EXAM_TIPS
+(Give 5 useful exam preparation tips.)
+
+Do not miss any section.
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-nano",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an expert educational AI assistant."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.7
+    )
+
+    return response.choices[0].message.content
+
+
+def split_response(text):
+
+    sections = {
+        "study_plan": "",
+        "explanation": "",
+        "revision": "",
+        "quiz": "",
+        "tips": ""
+    }
+
+    current = None
+
+    for line in text.split("\n"):
+
+        if "### STUDY_PLAN" in line:
+            current = "study_plan"
+            continue
+
+        elif "### EXPLANATION" in line:
+            current = "explanation"
+            continue
+
+        elif "### REVISION_NOTES" in line:
+            current = "revision"
+            continue
+
+        elif "### QUIZ" in line:
+            current = "quiz"
+            continue
+
+        elif "### EXAM_TIPS" in line:
+            current = "tips"
+            continue
+
+        if current:
+            sections[current] += line + "\n"
+
+    return (
+        sections["study_plan"],
+        sections["explanation"],
+        sections["revision"],
+        sections["quiz"],
+        sections["tips"]
+    )
+
+
+def ai_study_assistant(subject, topics, days_left, study_hours, level):
+
+    response = generate_study_plan(
+        subject,
+        topics,
+        days_left,
+        study_hours,
+        level
+    )
+
+    return split_response(response)
+def solve_doubt(subject, question):
+
+    prompt = f"""
+You are an expert teacher.
+
+Subject: {subject}
+
+Student Question:
+{question}
+
+Explain the answer in simple language.
+
+Also provide:
+1. A simple explanation
+2. A real-world example
+3. A short exam tip
+
+Keep the answer easy to understand.
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-nano",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful AI tutor."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.5
+    )
+
+    return response.choices[0].message.content
+def generate_quiz(subject, topic, difficulty):
+
+    prompt = f"""
+You are an expert teacher.
+
+Create a quiz.
+
+Subject: {subject}
+
+Topic: {topic}
+
+Difficulty: {difficulty}
+
+Instructions:
+
+1. Generate exactly 5 multiple-choice questions.
+2. Each question must have four options (A, B, C, D).
+3. DO NOT reveal the correct answers.
+4. Format the quiz neatly.
+5. At the end write:
+
+"Attempt all the questions first. Then click the 'Show Answer Key' button to check your answers."
+
+Return only the quiz.
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-nano",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI Quiz Generator."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.6
+    )
+
+    return response.choices[0].message.content
+def generate_answer_key(subject, topic, difficulty):
+
+    prompt = f"""
+    You are an expert teacher.
+ 
+    Subject: {subject}
+
+    Topic: {topic}
+
+    Difficulty: {difficulty}
+
+    Generate ONLY the answer key for the quiz.
+
+    Format:
+
+    Answer Key
+
+    1. B
+
+    2. D
+  
+    3. A
+
+    4. C
+
+    5. B
+
+    Also give a one-line explanation for each answer.
+
+    Do not generate the questions again.
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-nano",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an AI Quiz Evaluator."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.5
+    )
+
+    return response.choices[0].message.content
+
+CELL 4
+
+import gradio as gr
+
+with gr.Blocks(theme=gr.themes.Soft(), title="StudyGenie AI") as demo:
+
+    gr.Markdown("""
+# 🎓 StudyGenie AI
+### Personalized Study Planner using Generative AI
+
+Generate a personalized study schedule, topic explanations, revision notes,
+practice quizzes, and exam tips using AI.
+
+---
+### ✨ Features
+
+✅ Personalized Study Plan
+
+✅ AI Doubt Solver
+
+✅ AI Quiz Generator
+
+---
+""")
+
+    # -------------------------------
+    # Study Planner Inputs
+    # -------------------------------
+
+    subject = gr.Textbox(
+        label="📘 Subject",
+        placeholder="Example: Python Programming"
+    )
+
+    topics = gr.Textbox(
+        label="📚 Topics",
+        lines=4,
+        placeholder="Functions, Lists, Dictionaries, OOP..."
+    )
+
+    with gr.Row():
+
+        days_left = gr.Slider(
+            minimum=1,
+            maximum=30,
+            value=5,
+            step=1,
+            label="📅 Days Until Exam"
+        )
+
+        study_hours = gr.Slider(
+            minimum=1,
+            maximum=10,
+            value=3,
+            step=1,
+            label="⏰ Study Hours Per Day"
+        )
+
+    level = gr.Dropdown(
+        choices=["Beginner", "Intermediate", "Advanced"],
+        value="Beginner",
+        label="🎯 Learning Level"
+    )
+
+    generate_btn = gr.Button(
+        "🚀 Generate Study Plan",
+        variant="primary"
+    )
+
+    # -------------------------------
+    # Output Tabs
+    # -------------------------------
+
+    with gr.Tabs():
+
+        with gr.Tab("📅 Study Plan"):
+            study_output = gr.Markdown()
+
+        with gr.Tab("📖 Topic Explanation"):
+            explanation_output = gr.Markdown()
+
+        with gr.Tab("📝 Revision Notes"):
+            revision_output = gr.Markdown()
+
+        with gr.Tab("❓ Practice Quiz"):
+            quiz_output = gr.Markdown()
+
+        with gr.Tab("💡 Exam Tips"):
+            tips_output = gr.Markdown()
+
+        # =============================
+        # AI DOUBT SOLVER
+        # =============================
+
+        with gr.Tab("❓ AI Doubt Solver"):
+
+            doubt_subject = gr.Textbox(
+                label="📘 Subject",
+                placeholder="Example: Python Programming"
+            )
+
+            doubt_question = gr.Textbox(
+                label="❓ Ask Your Doubt",
+                lines=4,
+                placeholder="Example: What is Recursion?"
+            )
+
+            doubt_btn = gr.Button(
+                "🤖 Solve My Doubt",
+                variant="primary"
+            )
+
+            doubt_output = gr.Markdown()
+
+        # =============================
+        # AI QUIZ GENERATOR
+        # =============================
+
+        with gr.Tab("📝 AI Quiz Generator"):
+
+            quiz_subject = gr.Textbox(
+                label="📘 Subject",
+                placeholder="Example: Python Programming"
+            )
+
+            quiz_topic = gr.Textbox(
+                label="📚 Topic",
+                placeholder="Example: Functions"
+            )
+
+            quiz_difficulty = gr.Dropdown(
+                choices=["Easy", "Medium", "Hard"],
+                value="Medium",
+                label="🎯 Difficulty"
+            )
+
+            with gr.Row():
+
+                quiz_btn = gr.Button(
+                    "📝 Generate Quiz",
+                    variant="primary"
+                )
+
+                answer_btn = gr.Button(
+                    "✅ Show Answer Key"
+                )
+
+            quiz_result = gr.Markdown()
+
+            answer_result = gr.Markdown()
+
+    # -------------------------------
+    # Button Connections
+    # -------------------------------
+
+    generate_btn.click(
+        fn=ai_study_assistant,
+        inputs=[
+            subject,
+            topics,
+            days_left,
+            study_hours,
+            level
+        ],
+        outputs=[
+            study_output,
+            explanation_output,
+            revision_output,
+            quiz_output,
+            tips_output
+        ]
+    )
+
+    doubt_btn.click(
+        fn=solve_doubt,
+        inputs=[
+            doubt_subject,
+            doubt_question
+        ],
+        outputs=doubt_output
+    )
+
+    quiz_btn.click(
+        fn=generate_quiz,
+        inputs=[
+            quiz_subject,
+            quiz_topic,
+            quiz_difficulty
+        ],
+        outputs=quiz_result
+    )
+
+    answer_btn.click(
+        fn=generate_answer_key,
+        inputs=[
+            quiz_subject,
+            quiz_topic,
+            quiz_difficulty
+        ],
+        outputs=answer_result
+    )
+
+demo.launch(share=True)
